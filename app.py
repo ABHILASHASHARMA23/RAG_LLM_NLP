@@ -74,12 +74,24 @@ documents = text_splitter.split_documents(documents)
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
 # Load or create FAISS index
-try:
-    new_db = FAISS.load_local("Faiss_index", embeddings, allow_dangerous_deserialization=True)
-except Exception as e:
-    st.warning(f"Failed to load FAISS index: {e}. Recreating a new index...")
+# Load or create FAISS index
+faiss_folder = "Faiss_index"
+
+if os.path.exists(faiss_folder):
+    try:
+        new_db = FAISS.load_local(faiss_folder, embeddings, allow_dangerous_deserialization=True)
+        st.success("FAISS index loaded successfully!")
+    except Exception as e:
+        st.error(f"Error loading existing FAISS index: {e}. Creating a new one...")
+        new_db = FAISS.from_documents(documents, embeddings)
+        new_db.save_local(faiss_folder)
+        st.info("New FAISS index created.")
+else:
+    st.info("FAISS index not found. Creating a new one...")
     new_db = FAISS.from_documents(documents, embeddings)
-    new_db.save_local("Faiss_index")
+    new_db.save_local(faiss_folder)
+    st.success("FAISS index created successfully!")
+
 
 retriever = new_db.as_retriever()
 
@@ -167,6 +179,7 @@ if query:
 
     except Exception as e:
         st.error(f"Error during response generation: {e}")
+
 
 
 
