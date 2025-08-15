@@ -70,27 +70,42 @@ documents = text_splitter.split_documents(documents)
 
 
 # Load embeddings and FAISS
-# Load embeddings
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
+# Load embeddings and check Ollama API key
+if "OLLAMA_API_KEY" not in os.environ:
+    st.error("OLLAMA_API_KEY not found. Please set it in your .env file.")
+    st.stop()
+
+try:
+    embeddings = OllamaEmbeddings(model="nomic-embed-text")
+    # Optional quick test embedding
+    embeddings.embed_documents(["Hello world"])
+    st.success("Ollama embeddings are working!")
+except Exception as e:
+    st.error(f"Failed to initialize Ollama embeddings: {e}")
+    st.stop()
+
+
 
 # Load or create FAISS index
 # Load or create FAISS index
 faiss_folder = "Faiss_index"
 
-if os.path.exists(faiss_folder):
-    try:
+try:
+    if os.path.exists(faiss_folder):
         new_db = FAISS.load_local(faiss_folder, embeddings, allow_dangerous_deserialization=True)
         st.success("FAISS index loaded successfully!")
-    except Exception as e:
-        st.error(f"Error loading existing FAISS index: {e}. Creating a new one...")
+    else:
+        st.info("FAISS index not found. Creating a new one...")
+        if len(documents) == 0:
+            st.error("No documents available to create FAISS index!")
+            st.stop()
         new_db = FAISS.from_documents(documents, embeddings)
         new_db.save_local(faiss_folder)
-        st.info("New FAISS index created.")
-else:
-    st.info("FAISS index not found. Creating a new one...")
-    new_db = FAISS.from_documents(documents, embeddings)
-    new_db.save_local(faiss_folder)
-    st.success("FAISS index created successfully!")
+        st.success("FAISS index created successfully!")
+except Exception as e:
+    st.error(f"Error loading/creating FAISS index: {e}")
+    st.stop()
+
 
 
 retriever = new_db.as_retriever()
@@ -179,6 +194,7 @@ if query:
 
     except Exception as e:
         st.error(f"Error during response generation: {e}")
+
 
 
 
