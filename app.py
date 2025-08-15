@@ -3,6 +3,12 @@ import streamlit as st
 # Set page config first
 st.set_page_config(page_title="AI RAG Chatbot", layout="wide")
 
+
+from dotenv import load_dotenv import os 
+load_dotenv() # this loads variables from .env 
+api_key = os.getenv("LANGCHAIN_API_KEY") print("API Key loaded:", bool(api_key)) # just to check
+
+
 import os
 import pandas as pd
 from langchain_groq import ChatGroq
@@ -150,4 +156,5 @@ if query:
 
     except Exception as e:
         st.error(f"Error during response generation: {e}")
+
 
