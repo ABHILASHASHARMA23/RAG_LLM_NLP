@@ -70,8 +70,17 @@ documents = text_splitter.split_documents(documents)
 
 
 # Load embeddings and FAISS
+# Load embeddings
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
-new_db = FAISS.load_local("Faiss_index", embeddings, allow_dangerous_deserialization=True)
+
+# Load or create FAISS index
+try:
+    new_db = FAISS.load_local("Faiss_index", embeddings, allow_dangerous_deserialization=True)
+except Exception as e:
+    st.warning(f"Failed to load FAISS index: {e}. Recreating a new index...")
+    new_db = FAISS.from_documents(documents, embeddings)
+    new_db.save_local("Faiss_index")
+
 retriever = new_db.as_retriever()
 
 
@@ -158,6 +167,7 @@ if query:
 
     except Exception as e:
         st.error(f"Error during response generation: {e}")
+
 
 
 
